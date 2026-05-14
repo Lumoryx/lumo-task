@@ -1,0 +1,24 @@
+# CODEOWNERS — 定义各模块的自动 Reviewer
+# 格式：<文件路径模式>  <GitHub 用户名/团队>
+# 所有 PR 会自动 Request Review 给对应 Owner
+
+# 默认所有文件
+*                               @lumoryx
+
+# CI/CD 配置变更需要额外审查
+.github/                        @lumoryx
+.github/workflows/              @lumoryx
+
+# API 合约变更需要额外审查（前后端对齐）
+api/                            @lumoryx
+
+# 核心架构文件
+src/store/                      @lumoryx
+src/lib/                        @lumoryx
+src/types/                      @lumoryx
+
+# 设计 token / 视觉系统
+src/styles/                     @lumoryx
+
+# 文档
+docs/                           @lumoryx

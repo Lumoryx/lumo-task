@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # npm / pnpm 依赖自动升级
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    # 分组更新，减少 PR 噪音
+    groups:
+      react:
+        patterns: ["react", "react-dom", "react-router*", "@types/react*"]
+      vite-toolchain:
+        patterns: ["vite", "@vitejs/*", "typescript", "eslint*", "@typescript-eslint/*"]
+      zustand:
+        patterns: ["zustand"]
+      msw:
+        patterns: ["msw"]
+    # 自动合并 patch 版本的安全更新（需要在 GitHub Settings 开启 auto-merge）
+    labels:
+      - "dependencies"
+      - "automated"
+    commit-message:
+      prefix: "chore"
+      include: scope
+
+  # GitHub Actions 版本自动升级
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Shanghai
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 讨论 / 问题
+    url: https://github.com/lumoryx/lumo-task/discussions
+    about: 非 Bug 的使用问题请在 Discussions 提问
