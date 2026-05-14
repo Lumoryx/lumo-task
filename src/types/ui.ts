@@ -1,0 +1,8 @@
+export type AccentTheme = 'green' | 'violet' | 'coral' | 'gold'
+export type Language = 'en' | 'zh'
+export type Density = 'compact' | 'default' | 'spacious'
+export type TodayCardVariant = 'classic' | 'conviction' | 'path'
+export type MatrixLayout = '2x2' | 'list' | 'hybrid'
+export type AIVariant = 'dot' | 'orb' | 'text'
+export type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger'
+export type BtnSize = 'sm' | 'md' | 'lg'

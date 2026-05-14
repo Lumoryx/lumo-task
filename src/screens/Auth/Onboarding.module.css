@@ -1,0 +1,80 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-0);
+  padding: var(--space-4);
+}
+.card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-2);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.steps {
+  display: flex;
+  gap: var(--space-2);
+}
+.step {
+  flex: 1;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--border-1);
+  transition: background var(--duration-base);
+}
+.stepActive { background: var(--accent); }
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+}
+.glyphWrap { margin: var(--space-4) 0; }
+.title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-0);
+  letter-spacing: -0.02em;
+}
+.sub { font-size: var(--text-base); color: var(--text-2); line-height: var(--leading-normal); max-width: 320px; }
+.stepLabel { font-size: var(--text-sm); color: var(--text-1); font-weight: var(--weight-medium); align-self: flex-start; }
+.hint { font-size: var(--text-sm); color: var(--text-3); }
+
+.accents {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  width: 100%;
+}
+.accentBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: border-color var(--duration-fast), background var(--duration-fast);
+}
+.accentBtn:hover { background: var(--surface-2); }
+.accentBtn.accentSelected { border-color: var(--swatch, var(--accent)); background: var(--surface-2); }
+.swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--swatch, var(--accent));
+  flex-shrink: 0;
+}
+.accentLabel { font-size: var(--text-sm); color: var(--text-1); }
+
+.actions { display: flex; flex-direction: column; gap: var(--space-2); }

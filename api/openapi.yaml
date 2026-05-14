@@ -1,0 +1,1019 @@
+openapi: 3.0.3
+info:
+  title: Lumo Task API
+  description: |
+    REST API contract for Lumo Task — an AI-powered task management application.
+
+    This spec is the **source of truth** for both the MSW mock layer (Phase 1)
+    and the real backend implementation (Phase 2).
+
+    All endpoints are prefixed with `/api/v1`.
+  version: 1.0.0
+  contact:
+    name: Lumo Task
+    url: https://lumoryx.github.io/lumo-task/
+
+servers:
+  - url: /api/v1
+    description: Application server
+
+tags:
+  - name: tasks
+    description: Task CRUD and status management
+  - name: pomodoros
+    description: Pomodoro session tracking
+  - name: ai
+    description: AI-powered recommendations and classification
+  - name: settings
+    description: User settings and preferences
+  - name: auth
+    description: Authentication and account management
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LocalizedText:
+      type: object
+      required: [en]
+      properties:
+        en:
+          type: string
+          description: English text
+        zh:
+          type: string
+          description: Chinese (Simplified) text
+
+    Quadrant:
+      type: string
+      enum: [Q1, Q2, Q3, Q4, unclassified]
+      description: |
+        Eisenhower matrix quadrant.
+        - Q1: Urgent & Important
+        - Q2: Not Urgent, Important
+        - Q3: Urgent, Not Important
+        - Q4: Neither
+        - unclassified: Not yet classified
+
+    Priority:
+      type: string
+      enum: [urgent, high, medium, low]
+
+    TaskStatus:
+      type: string
+      enum: [pending, in_progress, completed, cancelled]
+
+    Task:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - quadrant
+        - priority
+        - today
+        - actual_mins
+        - estimated_pomos
+        - actual_pomos
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: nanoid
+          example: V1StGXR8_Z5jdHi6B-myT
+        title:
+          $ref: '#/components/schemas/LocalizedText'
+        description:
+          $ref: '#/components/schemas/LocalizedText'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        quadrant:
+          $ref: '#/components/schemas/Quadrant'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        today:
+          type: boolean
+          description: Whether the task is pinned to today's list
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+        estimated_mins:
+          type: integer
+          nullable: true
+          minimum: 1
+        actual_mins:
+          type: integer
+          minimum: 0
+          default: 0
+        estimated_pomos:
+          type: integer
+          minimum: 1
+          default: 1
+        actual_pomos:
+          type: integer
+          minimum: 0
+          default: 0
+        ai_reason:
+          $ref: '#/components/schemas/LocalizedText'
+          nullable: true
+        conviction:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: AI confidence score (0–1)
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    AIRecommendation:
+      type: object
+      required: [task, reason, conviction, not_now]
+      properties:
+        task:
+          $ref: '#/components/schemas/Task'
+        reason:
+          $ref: '#/components/schemas/LocalizedText'
+        conviction:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        not_now:
+          type: array
+          items:
+            type: object
+            required: [task_id, reason]
+            properties:
+              task_id:
+                type: string
+              reason:
+                $ref: '#/components/schemas/LocalizedText'
+
+    ClassifyResult:
+      type: object
+      required: [task_id, suggested_quadrant, reason]
+      properties:
+        task_id:
+          type: string
+        suggested_quadrant:
+          type: string
+          enum: [Q1, Q2, Q3, Q4]
+        reason:
+          $ref: '#/components/schemas/LocalizedText'
+
+    PomodoroSession:
+      type: object
+      required: [id, task_id, started_at, duration_mins, status]
+      properties:
+        id:
+          type: string
+        task_id:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        abandoned_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_mins:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [active, paused, completed, abandoned]
+
+    AppSettings:
+      type: object
+      properties:
+        accent:
+          type: string
+          enum: [green, violet, coral, gold]
+          default: green
+        language:
+          type: string
+          enum: [en, zh]
+          default: en
+        density:
+          type: string
+          enum: [compact, default, spacious]
+          default: default
+        reduced_motion:
+          type: boolean
+          default: false
+        today_card_variant:
+          type: string
+          enum: [classic, conviction, path]
+          default: classic
+        matrix_layout:
+          type: string
+          enum: [2x2, list, hybrid]
+          default: 2x2
+        pomodoro_duration_mins:
+          type: integer
+          minimum: 1
+          maximum: 60
+          default: 25
+        short_break_mins:
+          type: integer
+          minimum: 1
+          maximum: 30
+          default: 5
+        long_break_mins:
+          type: integer
+          minimum: 1
+          maximum: 60
+          default: 15
+        pomos_before_long_break:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 4
+
+    AIConfig:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: [openai, anthropic, deepseek, gemini]
+        api_key_masked:
+          type: string
+          description: Last 4 characters of the API key, rest masked
+          example: "••••••••••••a3f2"
+        model:
+          type: string
+          example: gpt-4o
+        max_tokens:
+          type: integer
+          minimum: 256
+          maximum: 32768
+          default: 2048
+
+    User:
+      type: object
+      required: [id, email, name, created_at]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ─── Tasks ───────────────────────────────────────────────────────────────────
+
+  /tasks:
+    get:
+      tags: [tasks]
+      summary: List tasks
+      operationId: listTasks
+      parameters:
+        - in: query
+          name: quadrant
+          schema:
+            $ref: '#/components/schemas/Quadrant'
+        - in: query
+          name: today
+          schema:
+            type: boolean
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/TaskStatus'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  total:
+                    type: integer
+
+    post:
+      tags: [tasks]
+      summary: Create a task
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                quadrant:
+                  $ref: '#/components/schemas/Quadrant'
+                priority:
+                  $ref: '#/components/schemas/Priority'
+                today:
+                  type: boolean
+                due_date:
+                  type: string
+                  format: date-time
+                estimated_mins:
+                  type: integer
+                estimated_pomos:
+                  type: integer
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+
+  /tasks/today:
+    get:
+      tags: [tasks]
+      summary: Get today's task list + AI recommendation
+      operationId: getTodayTasks
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      tasks:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Task'
+                      recommended:
+                        $ref: '#/components/schemas/AIRecommendation'
+                        nullable: true
+
+  /tasks/{id}:
+    get:
+      tags: [tasks]
+      summary: Get a task
+      operationId: getTask
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      tags: [tasks]
+      summary: Partially update a task
+      operationId: updateTask
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                quadrant:
+                  $ref: '#/components/schemas/Quadrant'
+                priority:
+                  $ref: '#/components/schemas/Priority'
+                status:
+                  $ref: '#/components/schemas/TaskStatus'
+                today:
+                  type: boolean
+                due_date:
+                  type: string
+                  format: date-time
+                estimated_mins:
+                  type: integer
+                estimated_pomos:
+                  type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+
+    delete:
+      tags: [tasks]
+      summary: Soft-delete a task (sets status to cancelled)
+      operationId: deleteTask
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      deleted:
+                        type: boolean
+
+  /tasks/{id}/complete:
+    patch:
+      tags: [tasks]
+      summary: Mark a task as complete
+      operationId: completeTask
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actual_mins:
+                  type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+
+  /tasks/{id}/today:
+    patch:
+      tags: [tasks]
+      summary: Toggle task's today flag
+      operationId: toggleTodayFlag
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [today]
+              properties:
+                today:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+
+  # ─── Pomodoros ───────────────────────────────────────────────────────────────
+
+  /tasks/{id}/pomodoros:
+    post:
+      tags: [pomodoros]
+      summary: Start a pomodoro session for a task
+      operationId: startPomodoro
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Session started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      session_id:
+                        type: string
+
+  /pomodoros/{id}:
+    patch:
+      tags: [pomodoros]
+      summary: Update a pomodoro session (pause, complete, abandon)
+      operationId: updatePomodoro
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [paused, completed, abandoned]
+                actual_mins:
+                  type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PomodoroSession'
+
+  # ─── AI ──────────────────────────────────────────────────────────────────────
+
+  /ai/recommend:
+    post:
+      tags: [ai]
+      summary: Get AI recommendation for today's most important task
+      operationId: aiRecommend
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AIRecommendation'
+
+  /ai/classify:
+    post:
+      tags: [ai]
+      summary: Batch classify unclassified tasks
+      operationId: aiClassify
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_ids]
+              properties:
+                task_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ClassifyResult'
+
+  /ai/parse:
+    post:
+      tags: [ai]
+      summary: Parse a natural language task input
+      operationId: aiParse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [input]
+              properties:
+                input:
+                  type: string
+                  example: "Review Q3 roadmap with PM team by Friday - urgent"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      title:
+                        type: string
+                      description:
+                        type: string
+                      quadrant:
+                        $ref: '#/components/schemas/Quadrant'
+                      priority:
+                        $ref: '#/components/schemas/Priority'
+                      due_date:
+                        type: string
+                        format: date-time
+                      estimated_pomos:
+                        type: integer
+
+  /ai/test-connection:
+    post:
+      tags: [ai]
+      summary: Test AI provider connection
+      operationId: aiTestConnection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provider, api_key, model]
+              properties:
+                provider:
+                  type: string
+                  enum: [openai, anthropic, deepseek, gemini]
+                api_key:
+                  type: string
+                model:
+                  type: string
+      responses:
+        '200':
+          description: Connection successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+                      latency_ms:
+                        type: integer
+        '400':
+          description: Connection failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ai/chat:
+    post:
+      tags: [ai]
+      summary: Start an AI conversation session
+      operationId: aiChat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                session_id:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      session_id:
+                        type: string
+
+  # ─── Settings ────────────────────────────────────────────────────────────────
+
+  /settings:
+    get:
+      tags: [settings]
+      summary: Get all settings
+      operationId: getSettings
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AppSettings'
+
+  /settings/{key}:
+    put:
+      tags: [settings]
+      summary: Update a single setting
+      operationId: updateSetting
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+            enum:
+              - accent
+              - language
+              - density
+              - reduced_motion
+              - today_card_variant
+              - matrix_layout
+              - pomodoro_duration_mins
+              - short_break_mins
+              - long_break_mins
+              - pomos_before_long_break
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: {}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AppSettings'
+
+  /settings/ai:
+    get:
+      tags: [settings]
+      summary: Get AI configuration (key is masked)
+      operationId: getAIConfig
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AIConfig'
+
+    put:
+      tags: [settings]
+      summary: Save AI configuration
+      operationId: saveAIConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum: [openai, anthropic, deepseek, gemini]
+                api_key:
+                  type: string
+                  description: Full API key (stored encrypted, returned masked)
+                model:
+                  type: string
+                max_tokens:
+                  type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AIConfig'
+
+  # ─── Auth ────────────────────────────────────────────────────────────────────
+
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Create a new account
+      operationId: register
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, name, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/User'
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Sign in
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      user:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Sign out
+      operationId: logout
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ok:
+                        type: boolean
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Get current user
+      operationId: getMe
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

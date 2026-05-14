@@ -1,0 +1,82 @@
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  transition: background var(--duration-fast);
+}
+.row:hover { background: var(--surface-hover); }
+.row.done { opacity: 0.45; }
+
+.check {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border-2);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+.check:hover { border-color: var(--accent); }
+.check.checked { background: var(--accent); border-color: var(--accent); }
+
+.content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.title { font-size: var(--text-sm); color: var(--text-0); line-height: var(--leading-normal); }
+.meta { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.metaItem { font-size: var(--text-xs); color: var(--text-2); }
+
+.actions { display: flex; align-items: center; gap: 4px; opacity: 0; transition: opacity var(--duration-fast); }
+.row:hover .actions { opacity: 1; }
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 12px;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.actionBtn:hover { background: var(--surface-2); color: var(--text-0); }
+
+.menuWrap { position: relative; }
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--bg-4);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+  min-width: 160px;
+  z-index: 100;
+  box-shadow: var(--shadow-lg);
+}
+.menuItem {
+  width: 100%;
+  text-align: left;
+  padding: 7px 12px;
+  font-size: var(--text-sm);
+  color: var(--text-1);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.menuItem:hover { background: var(--surface-2); color: var(--text-0); }
+.menuItem.danger { color: var(--danger); }
+.menuItem.danger:hover { background: rgba(255,95,95,0.1); }
