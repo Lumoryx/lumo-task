@@ -1,15 +1,24 @@
 name: CI
 
 on:
-  push:
-    branches: [main, "claude/**"]
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: ["feat/**", "fix/**", "refactor/**", "chore/**", "docs/**"]
+
+# Cancel in-flight runs for the same PR/branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  check:
-    name: Type-check & Build
+  # ── Stage 1: Quality gates (run in parallel) ────────────────────────────────
+
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
       - uses: actions/checkout@v4
 
@@ -25,8 +34,88 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Type-check
+      - name: Lint
+        run: pnpm lint
+
+  type-check:
+    name: Type Check
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
         run: pnpm type-check
+
+  # ── Stage 2: Build (depends on quality gates) ───────────────────────────────
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm vite build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 3
+
+      - name: Report bundle size
+        run: |
+          echo "### 📦 Bundle Size" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| File | Size | Gzipped |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|------|---------|" >> $GITHUB_STEP_SUMMARY
+          for f in dist/assets/*.js dist/assets/*.css; do
+            size=$(du -sh "$f" | cut -f1)
+            gzip_size=$(gzip -c "$f" | wc -c | awk '{printf "%.1fkB", $1/1024}')
+            echo "| $(basename $f) | $size | $gzip_size |" >> $GITHUB_STEP_SUMMARY
+          done
+
+  # ── Stage 3: CI gate summary ─────────────────────────────────────────────────
+
+  ci-success:
+    name: CI Passed
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, build]
+    if: always()
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" || \
+                "${{ needs.type-check.result }}" != "success" || \
+                "${{ needs.build.result }}" != "success" ]]; then
+            echo "One or more CI jobs failed."
+            exit 1
+          fi
+          echo "All CI checks passed ✅"
