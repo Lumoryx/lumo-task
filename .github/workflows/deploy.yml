@@ -16,15 +16,13 @@ permissions:
   id-token: write
 
 concurrency:
-  group: deploy-production
+  group: pages
   cancel-in-progress: false
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    outputs:
-      sha-short: ${{ steps.meta.outputs.sha-short }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +30,7 @@ jobs:
         with:
           version: 10
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
@@ -43,35 +41,33 @@ jobs:
       - name: Build
         run: pnpm vite build
 
-      - name: Output metadata
-        id: meta
-        run: echo "sha-short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
       - name: Setup Pages
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    name: Deploy to Production
+    name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
     environment:
-      name: production
-      url: https://lumoryx.github.io/lumo-task/
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v4
 
       - name: Deployment summary
         run: |
-          echo "### 🚀 Deployed to Production" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed to GitHub Pages" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **URL**: https://lumoryx.github.io/lumo-task/" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: \`${{ needs.build.outputs.sha-short }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Triggered by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Time**: $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
