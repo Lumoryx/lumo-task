@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, "claude/optimize-design-docs-V0KXu"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
