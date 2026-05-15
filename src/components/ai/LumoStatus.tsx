@@ -1,35 +1,58 @@
 import type { AIVariant } from '../../types/ui'
-import styles from './LumoStatus.module.css'
 
 interface Props {
   variant?: AIVariant
+  text?: string
   label?: string
   size?: 'sm' | 'md' | 'lg'
   pulse?: boolean
 }
 
-export function LumoStatus({ variant = 'dot', label, size = 'md', pulse = false }: Props) {
-  if (variant === 'dot') {
-    return (
-      <span
-        className={`${styles.dot} ${styles[size]} ${pulse ? styles.pulse : ''}`}
-        aria-label="AI active"
-      />
-    )
-  }
+export function LumoStatus({ variant = 'dot', text, label }: Props) {
+  const displayText = text ?? label
 
   if (variant === 'orb') {
     return (
-      <div className={`${styles.orbWrap} ${styles[size]}`}>
-        <div className={`${styles.orb} ${pulse ? styles.breathe : ''}`} />
+      <div className="lumo-bar">
+        <div className="lumo-orb">
+          <div className="ring" />
+          <div className="ring" />
+          <div className="ring" />
+        </div>
+        {displayText && <span>{displayText}</span>}
       </div>
     )
   }
 
+  if (variant === 'text') {
+    return (
+      <div className="lumo-bar">
+        <span
+          className="lumo-text"
+          style={{
+            fontSize: 12,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'var(--accent-primary)',
+            fontWeight: 500,
+          }}
+        >
+          LUMO
+        </span>
+        <span style={{ color: 'var(--text-faint)' }}>·</span>
+        {displayText && <span className="lumo-text">{displayText}</span>}
+      </div>
+    )
+  }
+
+  // default: dot variant
   return (
-    <div className={styles.textWrap}>
-      <span className={`${styles.dot} ${styles.sm} ${pulse ? styles.pulse : ''}`} />
-      {label && <span className={styles.label}>{label}</span>}
+    <div className="lumo-bar">
+      <span className="lumo-glyph">
+        <span className="halo" />
+        <span className="core" />
+      </span>
+      {displayText && <span>{displayText}</span>}
     </div>
   )
 }

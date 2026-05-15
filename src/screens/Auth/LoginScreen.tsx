@@ -1,14 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { LumoGlyph } from '../../components/ai/LumoGlyph'
-import { Btn } from '../../components/common/Btn'
-import { Input } from '../../components/common/Input'
-import styles from './Auth.module.css'
+import { AuthHero } from './AuthHero'
 
 export function LoginScreen() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('alex@studio.io')
+  const [password, setPassword] = useState('••••••••')
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,44 +27,117 @@ export function LoginScreen() {
   }
 
   return (
-    <div className={styles.page}>
-      <div className={styles.card}>
-        <div className={styles.header}>
-          <LumoGlyph size={40} />
-          <h1 className={styles.title}>Sign in to Lumo</h1>
-          <p className={styles.sub}>AI-powered deep work</p>
-        </div>
+    <div style={{ flex: 1, display: 'flex', background: 'var(--bg-base)', position: 'relative', overflow: 'hidden' }}>
+      {/* Back button */}
+      <button
+        onClick={() => navigate('/today')}
+        style={{
+          position: 'absolute', top: 18, left: 18, zIndex: 5,
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          height: 32, padding: '0 12px 0 8px', borderRadius: 8,
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-default)',
+          color: 'var(--text-secondary)',
+          fontSize: 12, fontFamily: 'inherit', cursor: 'default',
+          transition: 'all 120ms var(--ease-default)',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-elevated)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-surface)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
+        Back
+      </button>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-          />
-          <Input
-            label="Password"
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-          />
-          <Btn type="submit" fullWidth loading={loading}>
-            Sign In
-          </Btn>
-        </form>
+      {/* Left hero */}
+      <AuthHero />
 
-        <div className={styles.footer}>
-          <span className={styles.footerText}>Don't have an account?</span>
-          <Link to="/register" className={styles.link}>Sign Up</Link>
+      {/* Right form */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 40px', minWidth: 0 }}>
+        <div style={{ width: 340, maxWidth: '100%' }}>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 22 }}>
+            <LumoGlyph size={20} />
+            <span style={{ fontSize: 14, fontWeight: 600, letterSpacing: '-0.01em' }}>
+              Lumo <span style={{ color: 'var(--text-faint)', fontWeight: 400, marginLeft: 2 }}>Task</span>
+            </span>
+          </div>
+
+          <div className="fade-in">
+            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--text-primary)', textAlign: 'center' }}>
+              Welcome back
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.55, textAlign: 'center' }}>
+              Sign in to continue your focused work
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label className="field-label">Email</label>
+                <input
+                  className="input"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="field-label">Password</label>
+                <input
+                  className="input"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg"
+                style={{ width: '100%', justifyContent: 'center', marginTop: 4, opacity: loading ? 0.7 : 1 }}
+                disabled={loading}
+              >
+                {loading ? 'Signing in…' : 'Sign In'}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 12px' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
+              <span style={{ fontSize: 11, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>or</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-faint)' }} />
+            </div>
+
+            {/* OAuth */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { provider: 'Google', label: 'Continue with Google' },
+                { provider: 'Apple', label: 'Continue with Apple' },
+                { provider: 'GitHub', label: 'Continue with GitHub' },
+              ].map(({ provider, label }) => (
+                <button key={provider} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 18, display: 'flex', justifyContent: 'center', gap: 14, fontSize: 12, color: 'var(--text-secondary)' }}>
+              <a style={{ color: 'var(--text-secondary)', textDecoration: 'none', cursor: 'default' }}>Forgot password?</a>
+              <span style={{ color: 'var(--text-faint)' }}>·</span>
+              <a
+                style={{ color: 'var(--text-secondary)', textDecoration: 'none', cursor: 'default' }}
+                onClick={() => navigate('/register')}
+              >Create account</a>
+            </div>
+
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--border-faint)', textAlign: 'center' }}>
+              <button className="btn btn-ghost" onClick={() => navigate('/today')} style={{ width: '100%', justifyContent: 'center' }}>
+                Continue without account
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </button>
+            </div>
+          </div>
         </div>
-        <div className={styles.divider}>or</div>
-        <Btn variant="ghost" fullWidth onClick={() => navigate('/today')}>
-          Continue as Guest
-        </Btn>
       </div>
     </div>
   )

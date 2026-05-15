@@ -1,42 +1,54 @@
 import { useState } from 'react'
-import { Input } from '../../components/common/Input'
-import { Btn } from '../../components/common/Btn'
-import { SegControl } from '../../components/common/SegControl'
 import { aiApi } from '../../lib/api/ai'
-import styles from './Settings.module.css'
+import { useSettingsStore } from '../../store/settings'
 
-const PROVIDERS = [
-  { value: 'openai', label: 'OpenAI' },
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'deepseek', label: 'DeepSeek' },
-  { value: 'gemini', label: 'Gemini' },
-]
-
-const MODELS: Record<string, string[]> = {
-  openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
-  anthropic: ['claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
-  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
-  gemini: ['gemini-2.0-flash', 'gemini-2.0-pro'],
+interface Props {
+  lang?: string
 }
 
-type Provider = 'openai' | 'anthropic' | 'deepseek' | 'gemini'
+function SectionHeader({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div style={{ paddingBottom: 4 }}>
+      <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+        {title}
+      </div>
+      {sub && (
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6, lineHeight: 1.55, maxWidth: 560 }}>
+          {sub}
+        </div>
+      )}
+    </div>
+  )
+}
 
-export function SettingsAI() {
-  const [provider, setProvider] = useState<Provider>('openai')
-  const [apiKey, setApiKey] = useState('')
-  const [model, setModel] = useState('gpt-4o')
+function SettingsPanel({ children }: { children: React.ReactNode }) {
+  return <div className="settings-panel">{children}</div>
+}
+
+function SettingRow({ label, helper, children, align }: {
+  label: string; helper?: string; children?: React.ReactNode; align?: 'top'
+}) {
+  return (
+    <div className={'settings-row' + (align === 'top' ? ' row-top' : '')}>
+      <div>
+        <div className="settings-label">{label}</div>
+        {helper && <div className="settings-helper">{helper}</div>}
+      </div>
+      <div style={{ minWidth: 0 }}>{children}</div>
+    </div>
+  )
+}
+
+export function SettingsAI({ lang: langProp }: Props) {
+  const { language } = useSettingsStore()
+  const lang = langProp ?? language
+  const [showKey, setShowKey] = useState(false)
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'ok' | 'fail'>('idle')
-
-  const handleProviderChange = (p: string) => {
-    const prov = p as Provider
-    setProvider(prov)
-    setModel(MODELS[prov][0])
-  }
 
   const handleTest = async () => {
     setTestStatus('loading')
     try {
-      await aiApi.testConnection(provider, apiKey, model)
+      await aiApi.testConnection('anthropic', '', 'claude-haiku-4-5')
       setTestStatus('ok')
     } catch {
       setTestStatus('fail')
@@ -44,76 +56,99 @@ export function SettingsAI() {
   }
 
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>AI Configuration</h2>
+    <div className="fade-in">
+      <SectionHeader
+        title={lang === 'zh' ? 'AI 配置' : 'AI Configuration'}
+        sub={lang === 'zh'
+          ? '连接你常用的大模型。API Key 仅保存在本地，绝不会上传。'
+          : 'Connect a model you already use. API keys stay on this device — never uploaded.'}
+      />
 
-      <div className={styles.card}>
-        <div className={styles.row}>
-          <div className={styles.rowLeft}>
-            <span className={styles.rowLabel}>Provider</span>
-            <span className={styles.rowSub}>Select your AI service provider</span>
-          </div>
-          <SegControl
-            options={PROVIDERS}
-            value={provider}
-            onChange={handleProviderChange}
-          />
-        </div>
+      <SettingsPanel>
+        <SettingRow
+          label={lang === 'zh' ? 'AI 状态' : 'AI Status'}
+          helper={lang === 'zh' ? '上次连接 12 秒前 · 21ms 延迟' : 'Last check 12s ago · 21ms latency'}
+        >
+          <span className="chip chip-ai" style={{ height: 24 }}>
+            <span style={{
+              width: 5, height: 5, borderRadius: '50%',
+              background: 'var(--accent-primary)',
+              boxShadow: '0 0 6px var(--accent-primary)',
+              animation: 'lumoBreath 3s ease-in-out infinite',
+            }} />
+            {lang === 'zh' ? '已连接' : 'Connected'}
+          </span>
+        </SettingRow>
 
-        <Input
-          label="API Key"
-          value={apiKey}
-          onChange={e => setApiKey(e.target.value)}
-          placeholder="sk-..."
-          masked
-        />
-
-        <div className={styles.row}>
-          <div className={styles.rowLeft}>
-            <span className={styles.rowLabel}>Model</span>
-          </div>
-          <select
-            className={modelSelectStyle}
-            value={model}
-            onChange={e => setModel(e.target.value)}
-          >
-            {MODELS[provider].map(m => (
-              <option key={m} value={m}>{m}</option>
-            ))}
+        <SettingRow label={lang === 'zh' ? '提供商' : 'Provider'}>
+          <select className="input" style={{ width: 260, height: 36 }} defaultValue="Claude">
+            <option>OpenAI</option>
+            <option>Claude</option>
+            <option>Gemini</option>
+            <option>DeepSeek</option>
+            <option>Ollama</option>
+            <option>Custom…</option>
           </select>
-        </div>
+        </SettingRow>
 
-        <div className={styles.row} style={{ borderBottom: 'none' }}>
-          <div className={styles.rowLeft}>
-            <span className={styles.rowLabel}>Connection</span>
-            <span className={styles.rowSub}>
-              {testStatus === 'ok' && '✓ Connection successful'}
-              {testStatus === 'fail' && '✗ Connection failed'}
-              {testStatus === 'idle' && 'Not tested'}
-            </span>
+        <SettingRow
+          label="API Key"
+          helper={lang === 'zh' ? '保存后将以掩码形式显示。' : 'Hidden after save — toggle to reveal momentarily.'}
+        >
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              className="input"
+              style={{ width: 320 }}
+              type={showKey ? 'text' : 'password'}
+              defaultValue="sk-ant-····················9f3a"
+            />
+            <button className="btn btn-secondary" onClick={() => setShowKey(v => !v)}>
+              {lang === 'zh' ? (showKey ? '隐藏' : '显示') : (showKey ? 'Hide' : 'Show')}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={handleTest}
+              style={{ opacity: testStatus === 'loading' ? 0.6 : 1 }}
+            >
+              {testStatus === 'ok' ? '✓' : testStatus === 'fail' ? '✗' : (lang === 'zh' ? '测试' : 'Test')}
+            </button>
           </div>
-          <Btn
-            size="sm"
-            variant="secondary"
-            loading={testStatus === 'loading'}
-            onClick={handleTest}
-          >
-            Test Connection
-          </Btn>
-        </div>
-      </div>
+        </SettingRow>
+
+        <SettingRow
+          label={lang === 'zh' ? 'Base URL' : 'Base URL'}
+          helper={lang === 'zh' ? '用于自定义或自托管的提供商' : 'Custom / self-hosted endpoint'}
+        >
+          <input
+            className="input"
+            style={{ width: 360 }}
+            placeholder="https://api.anthropic.com/v1"
+          />
+        </SettingRow>
+
+        <SettingRow label={lang === 'zh' ? '模型' : 'Model'}>
+          <select className="input" style={{ width: 260, height: 36 }} defaultValue="claude-haiku-4-5">
+            <option>claude-haiku-4-5</option>
+            <option>claude-sonnet-4</option>
+            <option>claude-opus-4</option>
+          </select>
+        </SettingRow>
+
+        <SettingRow
+          label={lang === 'zh' ? '本月用量' : 'Usage this month'}
+          helper="Pro · 8,420 / 60,000 tokens"
+        >
+          <div style={{ width: 360 }}>
+            <div style={{ height: 4, background: 'var(--bg-deep)', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{
+                width: '14%', height: '100%',
+                background: 'linear-gradient(90deg, var(--accent-dim), var(--accent-primary))',
+                boxShadow: '0 0 6px var(--accent-primary)',
+              }} />
+            </div>
+          </div>
+        </SettingRow>
+      </SettingsPanel>
     </div>
   )
 }
-
-const modelSelectStyle = `
-  background: var(--surface-1);
-  border: 1px solid var(--border-1);
-  border-radius: var(--radius-md);
-  color: var(--text-0);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  padding: 6px 10px;
-  outline: none;
-  cursor: pointer;
-`.replace(/\n\s*/g, ' ').trim()
