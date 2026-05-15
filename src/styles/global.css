@@ -450,6 +450,12 @@ input[type="number"] { -moz-appearance: textfield; }
   padding: 16px;
 }
 
+/* Focus atmosphere breathing animation */
+@keyframes atmoBreath {
+  0%, 100% { transform: scale(0.98); opacity: 0.85; }
+  50% { transform: scale(1.02); opacity: 1; }
+}
+
 /* Reduced motion */
 .reduce-motion * {
   animation: none !important;

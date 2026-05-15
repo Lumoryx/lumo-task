@@ -1,25 +1,18 @@
-import { useState } from 'react'
 import type { Task } from '../../types/api'
-
-const Q_META = {
-  Q1: { color: 'var(--q1-color)', bg: 'rgba(255, 107, 107, 0.04)', labelEn: 'Do First', labelZh: '立即做', subEn: 'Urgent & Important', subZh: '重要 · 紧急' },
-  Q2: { color: 'var(--q2-color)', bg: 'rgba(168, 230, 75, 0.03)', labelEn: 'Schedule', labelZh: '安排做', subEn: 'Important, Not Urgent', subZh: '重要 · 不紧急' },
-  Q3: { color: 'var(--q3-color)', bg: 'rgba(91, 200, 212, 0.03)', labelEn: 'Delegate', labelZh: '委托做', subEn: 'Urgent, Not Important', subZh: '紧急 · 不重要' },
-  Q4: { color: 'var(--q4-color)', bg: 'rgba(107, 126, 120, 0.03)', labelEn: 'Drop', labelZh: '减少做', subEn: 'Not Urgent, Not Important', subZh: '不紧急 · 不重要' },
-} as const
 
 interface Props {
   byQuadrant: Record<string, Task[]>
   lang: string
 }
 
-interface QuadrantBoxProps {
-  q: keyof typeof Q_META
-  tasks: Task[]
-  lang: string
-  dragOver?: boolean
-  big?: boolean
-}
+// Re-use QuadrantBox logic from QuadrantGrid but with big layout
+// For hybrid: Q1 big left + Q2/Q3/Q4 stacked right
+const Q_META = {
+  Q1: { color: 'var(--q1-color)', bg: 'rgba(255, 107, 107, 0.04)', labelEn: 'Do First', labelZh: '立即做', subEn: 'Urgent & Important', subZh: '重要 · 紧急' },
+  Q2: { color: 'var(--q2-color)', bg: 'rgba(168, 230, 75, 0.03)', labelEn: 'Schedule', labelZh: '安排做', subEn: 'Important, Not Urgent', subZh: '重要 · 不紧急' },
+  Q3: { color: 'var(--q3-color)', bg: 'rgba(91, 200, 212, 0.03)', labelEn: 'Delegate', labelZh: '委托做', subEn: 'Urgent, Not Important', subZh: '紧急 · 不重要' },
+  Q4: { color: 'var(--q4-color)', bg: 'rgba(107, 126, 120, 0.03)', labelEn: 'Drop', labelZh: '减少做', subEn: 'Not Urgent, Not Important', subZh: '不紧急 · 不重要' },
+} as const
 
 function MatrixCard({ task, lang }: { task: Task; lang: string }) {
   const title = lang === 'zh' ? (task.title.zh ?? task.title.en) : task.title.en
@@ -63,110 +56,58 @@ function MatrixCard({ task, lang }: { task: Task; lang: string }) {
   )
 }
 
-function QuadrantBox({ q, tasks, lang, dragOver = false, big = false }: QuadrantBoxProps) {
+function QuadrantPane({ q, tasks, lang }: { q: keyof typeof Q_META; tasks: Task[]; lang: string }) {
   const meta = Q_META[q]
-  const overload = q === 'Q1' && tasks.length >= 4
-  const [addHovered, setAddHovered] = useState(false)
-  const [addPressed, setAddPressed] = useState(false)
-
   const label = lang === 'zh' ? meta.labelZh : meta.labelEn
   const sub = lang === 'zh' ? meta.subZh : meta.subEn
 
   return (
     <div style={{
-      background: dragOver ? 'rgba(61, 255, 160, 0.05)' : meta.bg,
-      border: `1px solid ${dragOver ? 'var(--accent-primary)' : 'var(--border-default)'}`,
-      boxShadow: dragOver ? 'inset 0 0 0 1px var(--accent-edge), 0 0 24px var(--accent-fog)' : 'none',
+      background: meta.bg,
+      border: '1px solid var(--border-default)',
       borderRadius: 10,
       padding: 14,
       display: 'flex', flexDirection: 'column',
-      minHeight: big ? 0 : 200,
+      minHeight: 0,
       position: 'relative',
       transition: 'all 160ms var(--ease-default)',
     }}>
-      {/* Accent bar */}
       <div style={{
         position: 'absolute', top: 0, left: 14, right: 14, height: 2,
         background: meta.color, opacity: 0.7, borderRadius: 2,
       }} />
-
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: meta.color, letterSpacing: '0.01em' }}>
-          {label}
-        </span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: meta.color }}>{label}</span>
         <span style={{ fontSize: 11, color: 'var(--text-faint)', marginLeft: 'auto', fontVariantNumeric: 'tabular-nums' }}>
           {tasks.length}
         </span>
       </div>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
-        {sub}
-      </div>
-
-      {overload && (
-        <div style={{
-          fontSize: 11, color: 'var(--status-warning)',
-          padding: '8px 10px', marginBottom: 10,
-          background: 'rgba(255, 179, 71, 0.06)',
-          border: '1px solid rgba(255, 179, 71, 0.25)',
-          borderRadius: 6, lineHeight: 1.4,
-        }}>
-          {lang === 'zh' ? 'Q1 任务过多，建议拆分或移至其他象限' : 'Q1 is overloaded — consider delegating or rescheduling some tasks'}
-        </div>
-      )}
-
+      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>{sub}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0, overflow: 'auto' }}>
         {tasks.map(task => <MatrixCard key={task.id} task={task} lang={lang} />)}
+        {tasks.length === 0 && (
+          <div style={{ fontSize: 12, color: 'var(--text-faint)', padding: '4px 0' }}>
+            {lang === 'zh' ? '暂无任务' : 'Empty'}
+          </div>
+        )}
       </div>
-
-      {/* Add button */}
-      <button
-        onMouseEnter={() => setAddHovered(true)}
-        onMouseLeave={() => { setAddHovered(false); setAddPressed(false) }}
-        onMouseDown={() => setAddPressed(true)}
-        onMouseUp={() => setAddPressed(false)}
-        style={{
-          marginTop: 8,
-          background: addHovered ? 'var(--accent-fog)' : 'transparent',
-          border: '1px dashed ' + (addHovered ? 'var(--accent-edge)' : 'var(--border-default)'),
-          color: addHovered ? 'var(--accent-primary)' : 'var(--text-muted)',
-          fontSize: 12, fontWeight: addHovered ? 500 : 400,
-          padding: '8px 10px', borderRadius: 6,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          cursor: 'default', fontFamily: 'inherit',
-          transform: addPressed ? 'scale(0.98)' : (addHovered ? 'translateY(-1px)' : 'translateY(0)'),
-          boxShadow: addHovered && !addPressed ? '0 4px 12px rgba(0,0,0,0.25), 0 0 16px var(--accent-fog)' : 'none',
-          transition: 'all 160ms var(--ease-default)',
-        }}
-      >
-        <span style={{
-          width: 14, height: 14, display: 'inline-flex',
-          transform: addHovered ? 'rotate(90deg)' : 'rotate(0)',
-          transition: 'transform 220ms var(--ease-spring)',
-        }}>
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M8 3v10M3 8h10" />
-          </svg>
-        </span>
-        {lang === 'zh' ? '添加任务' : 'Add task'}
-      </button>
     </div>
   )
 }
 
-export function QuadrantGrid({ byQuadrant, lang }: Props) {
+export function MatrixHybrid({ byQuadrant, lang }: Props) {
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gridTemplateRows: '1fr 1fr',
-      gap: 12,
-      flex: 1,
-      minHeight: 0,
-      position: 'relative',
+      gridTemplateColumns: '1.4fr 1fr',
+      gap: 12, flex: 1, minHeight: 0,
     }}>
-      {(['Q1', 'Q2', 'Q3', 'Q4'] as const).map(q => (
-        <QuadrantBox key={q} q={q} tasks={byQuadrant[q] ?? []} lang={lang} />
-      ))}
+      <QuadrantPane q="Q1" tasks={byQuadrant.Q1 ?? []} lang={lang} />
+      <div style={{ display: 'grid', gridTemplateRows: '1fr 1fr 1fr', gap: 12, minHeight: 0 }}>
+        <QuadrantPane q="Q2" tasks={byQuadrant.Q2 ?? []} lang={lang} />
+        <QuadrantPane q="Q3" tasks={byQuadrant.Q3 ?? []} lang={lang} />
+        <QuadrantPane q="Q4" tasks={byQuadrant.Q4 ?? []} lang={lang} />
+      </div>
     </div>
   )
 }
