@@ -1,26 +1,25 @@
 interface Props {
   size?: number
-  color?: string
 }
 
-export function LumoGlyph({ size = 24, color = 'var(--accent)' }: Props) {
+export function LumoGlyph({ size = 22 }: Props) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="16" cy="16" r="14" stroke={color} strokeWidth="1.5" opacity="0.3" />
-      <circle cx="16" cy="16" r="8" fill={color} opacity="0.15" />
-      <circle cx="16" cy="16" r="4" fill={color} />
-      <circle cx="16" cy="6" r="2" fill={color} opacity="0.6" />
-      <circle cx="24.9" cy="11" r="2" fill={color} opacity="0.5" />
-      <circle cx="24.9" cy="21" r="2" fill={color} opacity="0.4" />
-      <circle cx="16" cy="26" r="2" fill={color} opacity="0.3" />
-      <circle cx="7.1" cy="21" r="2" fill={color} opacity="0.4" />
-      <circle cx="7.1" cy="11" r="2" fill={color} opacity="0.5" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <defs>
+        <radialGradient id="lumoGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="var(--accent-primary)" />
+          <stop offset="100%" stopColor="var(--accent-dim)" />
+        </radialGradient>
+      </defs>
+      <circle
+        cx="12" cy="12" r="9"
+        fill="none"
+        stroke="var(--accent-primary)"
+        strokeOpacity="0.35"
+        strokeWidth="1"
+      />
+      <circle cx="12" cy="12" r="4.5" fill="url(#lumoGrad)" />
+      <circle cx="12" cy="12" r="2" fill="var(--bg-base)" />
     </svg>
   )
 }

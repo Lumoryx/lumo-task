@@ -16,7 +16,6 @@ import { SettingsPrivacy } from './screens/Settings/SettingsPrivacy'
 import { SettingsAccount } from './screens/Settings/SettingsAccount'
 import { QuickCreate } from './modals/QuickCreate'
 import { applyStoredSettings } from './store/settings'
-import styles from './App.module.css'
 
 export function App() {
   const [quickCreateOpen, setQuickCreateOpen] = useState(false)
@@ -36,25 +35,42 @@ export function App() {
       <Route
         path="/*"
         element={
-          <div className={styles.shell}>
-            <Sidebar />
-            <div className={styles.main}>
-              <Topbar onQuickCreate={() => setQuickCreateOpen(true)} />
-              <div className={styles.content}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/today" replace />} />
-                  <Route path="/today" element={<TodayScreen />} />
-                  <Route path="/matrix" element={<MatrixScreen />} />
-                  <Route path="/focus" element={<FocusScreen />} />
-                  <Route path="/settings" element={<SettingsScreen />}>
-                    <Route index element={<SettingsIndex />} />
-                    <Route path="ai" element={<SettingsAI />} />
-                    <Route path="appearance" element={<SettingsAppearance />} />
-                    <Route path="sync" element={<SettingsSync />} />
-                    <Route path="privacy" element={<SettingsPrivacy />} />
-                    <Route path="account" element={<SettingsAccount />} />
-                  </Route>
-                </Routes>
+          <div className="stage">
+            <div className="page-bg" />
+            <div className="win">
+              {/* macOS-style titlebar */}
+              <div className="win-titlebar">
+                <div className="traffic">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+                <div className="title">Lumo Task</div>
+              </div>
+              {/* Animated top accent bar */}
+              <div className="lumo-pulse" />
+              {/* App body: sidebar + main */}
+              <div className="win-body">
+                <Sidebar />
+                <div className="main">
+                  <Topbar onQuickCreate={() => setQuickCreateOpen(true)} />
+                  <div className="content">
+                    <Routes>
+                      <Route path="/" element={<Navigate to="/today" replace />} />
+                      <Route path="/today" element={<TodayScreen />} />
+                      <Route path="/matrix" element={<MatrixScreen />} />
+                      <Route path="/focus" element={<FocusScreen />} />
+                      <Route path="/settings" element={<SettingsScreen />}>
+                        <Route index element={<SettingsIndex />} />
+                        <Route path="ai" element={<SettingsAI />} />
+                        <Route path="appearance" element={<SettingsAppearance />} />
+                        <Route path="sync" element={<SettingsSync />} />
+                        <Route path="privacy" element={<SettingsPrivacy />} />
+                        <Route path="account" element={<SettingsAccount />} />
+                      </Route>
+                    </Routes>
+                  </div>
+                </div>
               </div>
             </div>
             {quickCreateOpen && (
